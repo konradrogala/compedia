@@ -45,8 +45,8 @@ RSpec.describe Companies::Creator do
       result = described_class.new(companies_data, addresses_data).perform
 
       expect(result.count).to eq(2)
-      expect(result.map(&:name)).to match_array(['Example Co', 'Another Co'])
-      expect(result.map(&:registration_number)).to match_array(['123456789', '987654321'])
+      expect(result.map(&:name)).to match_array([ 'Example Co', 'Another Co' ])
+      expect(result.map(&:registration_number)).to match_array([ 123456789, 987654321 ])
 
       example_co = result.find { |c| c.name == 'Example Co' }
       another_co = result.find { |c| c.name == 'Another Co' }
@@ -54,7 +54,7 @@ RSpec.describe Companies::Creator do
       expect(example_co.addresses.count).to eq(2)
       expect(another_co.addresses.count).to eq(1)
 
-      expect(example_co.addresses.map(&:city)).to match_array(['New York', 'Los Angeles'])
+      expect(example_co.addresses.map(&:city)).to match_array([ 'New York', 'Los Angeles' ])
       expect(another_co.addresses.first.city).to eq('Chicago')
     end
 
