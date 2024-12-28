@@ -70,9 +70,9 @@ RSpec.describe Companies::Reader do
         expect(companies_data).to be_empty
         expect(addresses_data).to be_empty
         expect(errors).to include(
-          { line: 1, errors: ["Name can't be blank"] },
-          { line: 2, errors: ["Registration number can't be blank"] },
-          { line: 3, errors: ["City can't be blank"] }
+          { line: 1, errors: [ "Name can't be blank" ] },
+          { line: 2, errors: [ "Registration number can't be blank" ] },
+          { line: 3, errors: [ "City can't be blank" ] }
         )
       end
     end
@@ -101,7 +101,7 @@ RSpec.describe Companies::Reader do
 
       it 'handles CSV parsing errors' do
         companies_data, addresses_data, errors = described_class.new(malformed_csv_file).perform
-        
+
         expect(companies_data).to be_empty
         expect(addresses_data).to be_empty
         expect(errors).not_to be_empty
