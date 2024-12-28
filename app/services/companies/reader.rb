@@ -15,11 +15,11 @@ module Companies
         validate_csv_headers
         process_csv_rows(companies_data, addresses_data, errors)
       rescue CSV::MalformedCSVError, InvalidHeadersError => e
-        errors << { line: 0, errors: ["Malformed CSV file: #{e.message}"] }
-        return [[], [], errors]
+        errors << { line: 0, errors: [ "Malformed CSV file: #{e.message}" ] }
+        return [ [], [], errors ]
       end
 
-      [companies_data.values, addresses_data, errors]
+      [ companies_data.values, addresses_data, errors ]
     end
 
     private
@@ -43,12 +43,12 @@ module Companies
     end
 
     def process_row(row, line_number, companies_data, addresses_data, errors)
-      name = row['name']
-      registration_number = row['registration_number']
-      street = row['street']
-      city = row['city']
-      postal_code = row['postal_code']
-      country = row['country']
+      name = row["name"]
+      registration_number = row["registration_number"]
+      street = row["street"]
+      city = row["city"]
+      postal_code = row["postal_code"]
+      country = row["country"]
 
       company = Company.new(name: name, registration_number: registration_number)
       address = Address.new(
@@ -62,9 +62,7 @@ module Companies
       if company.valid? && address.valid?
         companies_data[registration_number] ||= {
           name: name,
-          registration_number: registration_number,
-          created_at: Time.current,
-          updated_at: Time.current
+          registration_number: registration_number
         }
 
         addresses_data << {
@@ -72,9 +70,7 @@ module Companies
           city: city,
           postal_code: postal_code,
           country: country,
-          registration_number: registration_number,
-          created_at: Time.current,
-          updated_at: Time.current
+          registration_number: registration_number
         }
       else
         errors << { line: line_number, errors: company.errors.full_messages + address.errors.full_messages }

@@ -4,11 +4,6 @@ require 'csv'
 RSpec.describe Companies::Reader do
   describe '#perform' do
     let(:csv_file) { Rails.root.join('spec', 'fixtures', 'companies_with_addresses.csv') }
-    let(:current_time) { Time.current }
-
-    before do
-      allow(Time).to receive(:current).and_return(current_time)
-    end
 
     context 'with valid data' do
       it 'returns properly formatted companies and addresses data' do
@@ -17,15 +12,11 @@ RSpec.describe Companies::Reader do
         expect(companies_data).to contain_exactly(
           {
             name: 'Example Co',
-            registration_number: '123456789',
-            created_at: current_time,
-            updated_at: current_time
+            registration_number: '123456789'
           },
           {
             name: 'Another Co',
-            registration_number: '987654321',
-            created_at: current_time,
-            updated_at: current_time
+            registration_number: '987654321'
           }
         )
 
@@ -35,27 +26,21 @@ RSpec.describe Companies::Reader do
             city: 'New York',
             postal_code: '10001',
             country: 'USA',
-            registration_number: '123456789',
-            created_at: current_time,
-            updated_at: current_time
+            registration_number: '123456789'
           },
           {
             street: '456 Elm St',
             city: 'Los Angeles',
             postal_code: '90001',
             country: 'USA',
-            registration_number: '123456789',
-            created_at: current_time,
-            updated_at: current_time
+            registration_number: '123456789'
           },
           {
             street: '789 Oak St',
             city: 'Chicago',
             postal_code: '60601',
             country: 'USA',
-            registration_number: '987654321',
-            created_at: current_time,
-            updated_at: current_time
+            registration_number: '987654321'
           }
         )
 
@@ -120,6 +105,7 @@ RSpec.describe Companies::Reader do
         expect(companies_data).to be_empty
         expect(addresses_data).to be_empty
         expect(errors).not_to be_empty
+        expect(errors.first[:errors].first).to include("Missing required headers")
       end
     end
   end
