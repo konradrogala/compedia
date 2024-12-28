@@ -5,8 +5,13 @@ class Api::V1::CompaniesController < ApplicationController
 
     if errors.any?
       render json: { errors: errors }, status: :unprocessable_entity
-      nil
+      return
     end
+
+    added_companies = Companies::Creator.new(companies_data, addresses_data).perform
+    render json: added_companies.as_json(include: :addresses), status: :ok
+  rescue StandardError => e
+    render json: { errors: [ { message: e.message } ] }, status: :unprocessable_entity
   end
 
   private
