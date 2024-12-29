@@ -10,9 +10,9 @@ module Companies
       address = Address.new(address_attributes.merge(company: company))
 
       if company.valid? && address.valid?
-        [true, company_attributes, address_attributes]
+        [ true, company_attributes, address_attributes ]
       else
-        [false, { line: line_number, errors: company.errors.full_messages + address.errors.full_messages }]
+        [ false, { line: line_number, errors: company.errors.full_messages + address.errors.full_messages } ]
       end
     end
 
