@@ -19,8 +19,8 @@ module Companies
       ActiveRecord::Base.transaction do
         insert_companies_and_addresses
       end
-    rescue ActiveRecord::BulkInsertError => e
-      handle_bulk_insert_error(e)
+    rescue ActiveRecord::RecordInvalid => e
+      handle_validation_error(e)
     end
 
     private
@@ -30,11 +30,10 @@ module Companies
     def insert_companies_and_addresses
       return [] if companies_data.empty?
 
-      inserted_companies = Company.bulk_insert(
+      inserted_companies = Company.insert_all(
         companies_data,
         returning: %w[id registration_number],
-        on_duplicate: :skip,
-        error_handling: ->(failed) { @failed_records[:companies].concat(failed) }
+        unique_by: :registration_number
       )
 
       company_id_map = inserted_companies&.index_by { |record| record["registration_number"] } || {}
@@ -42,13 +41,13 @@ module Companies
       addresses_with_company_ids = map_addresses_to_companies(company_id_map)
 
       if addresses_with_company_ids.any?
-        Address.bulk_insert(
-          addresses_with_company_ids,
-          error_handling: ->(failed) { @failed_records[:addresses].concat(failed) }
-        )
+        begin
+          Address.insert_all!(addresses_with_company_ids)
+        rescue ActiveRecord::RecordInvalid => e
+          @failed_records[:addresses] << e.record
+          raise BulkInsertError.new(@failed_records)
+        end
       end
-
-      raise BulkInsertError.new(@failed_records) if @failed_records.values.any?(&:present?)
 
       Company
         .includes(:addresses)
@@ -57,7 +56,7 @@ module Companies
 
     def map_addresses_to_companies(company_id_map)
       addresses_data.map do |address|
-        company_record = company_id_map[address[:registration_number].to_i]
+        company_record = company_id_map[address[:registration_number]]
         next if company_record.nil?
 
         {
@@ -70,7 +69,10 @@ module Companies
       end.compact
     end
 
-    def handle_bulk_insert_error(error)
+    def handle_validation_error(error)
+      @failed_records[:companies] << error.record if error.record.is_a?(Company)
+      @failed_records[:addresses] << error.record if error.record.is_a?(Address)
+
       Rails.error.report(
         error,
         context: {
@@ -78,7 +80,7 @@ module Companies
           failed_addresses: @failed_records[:addresses]
         }
       )
-      raise error
+      raise BulkInsertError.new(@failed_records)
     end
   end
 end
