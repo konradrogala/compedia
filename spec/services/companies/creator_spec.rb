@@ -45,8 +45,8 @@ RSpec.describe Companies::Creator do
       result = described_class.new(companies_data, addresses_data).perform
 
       expect(result.count).to eq(2)
-      expect(result.map(&:name)).to match_array([ 'Example Co', 'Another Co' ])
-      expect(result.map(&:registration_number)).to match_array([ 123456789, 987654321 ])
+      expect(result.map(&:name)).to match_array(['Example Co', 'Another Co'])
+      expect(result.map(&:registration_number)).to match_array([123456789, 987654321])
 
       example_co = result.find { |c| c.name == 'Example Co' }
       another_co = result.find { |c| c.name == 'Another Co' }
@@ -54,7 +54,7 @@ RSpec.describe Companies::Creator do
       expect(example_co.addresses.count).to eq(2)
       expect(another_co.addresses.count).to eq(1)
 
-      expect(example_co.addresses.map(&:city)).to match_array([ 'New York', 'Los Angeles' ])
+      expect(example_co.addresses.map(&:city)).to match_array(['New York', 'Los Angeles'])
       expect(another_co.addresses.first.city).to eq('Chicago')
     end
 
@@ -68,9 +68,45 @@ RSpec.describe Companies::Creator do
       end
     end
 
+    context 'when there are duplicate registration numbers' do
+      let(:duplicate_companies) do
+        [
+          { name: 'Example Co', registration_number: '123456789' },
+          { name: 'Duplicate Co', registration_number: '123456789' }
+        ]
+      end
+
+      it 'skips duplicates and continues processing' do
+        result = described_class.new(duplicate_companies, addresses_data).perform
+        expect(result.count).to eq(1)
+        expect(result.first.name).to eq('Example Co')
+      end
+    end
+
+    context 'when some records fail validation' do
+      let(:invalid_companies) do
+        [
+          { name: 'Valid Co', registration_number: '123456789' },
+          { name: nil, registration_number: '987654321' }
+        ]
+      end
+
+      it 'raises BulkInsertError with failed records' do
+        expect {
+          described_class.new(invalid_companies, addresses_data).perform
+        }.to raise_error(Companies::Creator::BulkInsertError) do |error|
+          expect(error.failed_records[:companies]).to be_present
+          expect(error.failed_records[:companies].first[:name]).to be_nil
+        end
+
+        expect(Company.count).to eq(0)
+        expect(Address.count).to eq(0)
+      end
+    end
+
     context 'when transaction fails' do
       before do
-        allow(Company).to receive(:insert_all).and_raise(ActiveRecord::StatementInvalid)
+        allow(Company).to receive(:bulk_insert).and_raise(ActiveRecord::StatementInvalid)
       end
 
       it 'rolls back all changes' do
